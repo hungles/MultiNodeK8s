@@ -1,0 +1,10 @@
+---
+- name: Install the control plane
+  hosts: k8-masters
+  roles:
+    - master
+
+- name: Join workers to the cluster
+  hosts: k8-workers
+  roles:
+    - workers

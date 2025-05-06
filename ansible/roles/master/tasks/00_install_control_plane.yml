@@ -1,0 +1,65 @@
+---
+- name: Install the components of control plane
+  block:
+
+    - name: Run kubeadm init only on the first node
+      shell: |
+        kubeadm init --control-plane-endpoint "{{ load_balancer_dns }}:6443" --upload-certs
+      when: is_first_master
+
+    - name: Create a .kube directory in the current user's home page
+      file:
+        path: "/home/{{ ansible_user_id }}/.kube"
+        state: directory
+        owner: "{{ ansible_user_id }}"
+        group: "{{ ansible_user_id }}"
+        mode: 0755
+      when: is_first_master
+
+    - name: Copy the admin.conf to ~/.kube/config
+      copy:
+        src: /etc/kubernetes/admin.conf
+        dest: "/home/{{ ansible_user_id }}/.kube/config"
+        remote_src: yes
+        owner: "{{ ansible_user_id }}"
+        group: "{{ ansible_user_id }}"
+        mode: 0600
+      when: is_first_master
+
+    - name: Run the kubeadm command and filter the output with grep
+      shell: |
+        kubeadm init phase upload-certs --upload-certs 2>&1 | grep -P '^[a-fA-F0-9]{64}$'
+      register: kube_cert
+      changed_when: false
+      when: is_first_master
+
+    - name: Save the result as an accessible fact
+      set_fact:
+        cert_key: "{{ kube_cert.stdout }}"
+      when: is_first_master
+
+    - name: Wait 15 seconds before continuing
+      pause:
+        seconds: 15
+      when: is_first_master
+
+    - name: Apply Calico as CNI plugin
+      shell: |
+        kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.26.1/manifests/calico.yaml
+      become_user: "{{ ansible_user_id }}"
+      when: is_first_master
+    
+    - name: Generate join token on the first master
+      shell: kubeadm token create --print-join-command
+      register: join_command_raw
+      when: is_first_master
+
+    - name: 
+      set_fact:
+        join_command: "{{ join_command_raw.stdout }}"
+      when: is_first_master
+
+    - name: Unir nodos masters secundarios al cluster
+      shell: "{{ hostvars[groups['k8-masters'][0]].join_command }} --control-plane --certificate-key {{ hostvars[groups['k8-masters'][0]].cert_key }}"
+      when: not is_first_master
+    

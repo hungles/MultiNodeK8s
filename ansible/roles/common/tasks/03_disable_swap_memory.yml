@@ -1,0 +1,14 @@
+---
+- name: Disable Swap memory on nodes
+  block:
+  
+    - name: Disable swap memory by commenting out swap entries in /etc/fstab
+      ansible.builtin.lineinfile:
+        path: /etc/fstab
+        regexp: '^([^#].*swap.*)'  # Matches any uncommented swap line
+        line: '#\1'                # Comments out the matched line by adding '#' at the beginning
+        backrefs: yes              # Enables backreferences to capture and reuse the matched text
+
+    - name: Run mount command to apply changes
+      ansible.builtin.command:
+        cmd: mount -a              # Re-mounts filesystems according to /etc/fstab, applying the changes

@@ -1,0 +1,33 @@
+---
+- name: Preconfigurar containerd antes de instalarlo
+  block:
+  
+    - name: Create configuration file from template
+      ansible.builtin.template:
+        src: containerd-modules.j2
+        dest: /etc/modules-load.d/containerd.conf
+        owner: root
+        group: root
+        mode: '0644'
+    
+    - name: Add the overlay module
+      community.general.modprobe:
+        name: overlay
+        state: present
+
+    - name: Add the br_netfilter module
+      community.general.modprobe:
+        name: br_netfilter
+        state: present
+
+    - name: Create configuration file from template
+      ansible.builtin.template:
+        src: containerd-sysctl.j2
+        dest: /etc/sysctl.d/99-kubernetes-cri.conf
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Apply sysctl settings
+      ansible.builtin.command:
+        cmd: sysctl --system

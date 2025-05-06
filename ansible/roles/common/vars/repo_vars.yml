@@ -1,0 +1,4 @@
+k8_32_gpg_deb: "https://pkgs.k8s.io/core:/stable:/v1.32/deb/Release.key"
+k8_32_repo_deb: "https://pkgs.k8s.io/core:/stable:/v1.31/deb/ /"
+docker_gpg: "https://download.docker.com/linux/ubuntu/gpg"
+docker_repo: "https://download.docker.com/linux/ubuntu jammy stable"

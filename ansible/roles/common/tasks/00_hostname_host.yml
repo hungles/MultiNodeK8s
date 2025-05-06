@@ -1,0 +1,10 @@
+---
+- name: Change the hostname and modify the /etc/hosts file
+  block:
+
+    - name: Add entries to the /etc/hosts file
+      lineinfile:
+        path: /etc/hosts              # Path to the /etc/hosts file
+        line: "{{ item.ip }} {{ item.hostname }}"  # Line to add, using variables from the loop
+        state: present                # Ensures the line is present in the file
+      loop: "{{ my_hosts }}"          # Loops through the list of hosts provided in the variable `my_hosts`

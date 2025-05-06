@@ -1,0 +1,4 @@
+---
+#roles/common/tasks/main.yml
+- name: Installing necessary kubernetes tools
+  ansible.builtin.include_tasks: 00_configure_k8.yml

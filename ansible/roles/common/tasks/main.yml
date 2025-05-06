@@ -1,0 +1,39 @@
+---
+# roles/common/tasks/main.yml
+- name: Load variables from hosts_vars.yml
+  include_vars:
+    file: "../vars/hosts_vars.yml"
+
+- name: Load variables from repo_vars.yml
+  include_vars:
+    file: "../vars/repo_vars.yml"
+
+- name: Include task to update servers
+  ansible.builtin.include_tasks: 00_hostname_host.yml
+
+- name: Include task to add GPG keys (Debian)
+  ansible.builtin.include_tasks: 01_repo_config_deb.yml
+  when: ansible_os_family == "Debian"
+
+- name: Include task to add GPG keys (RedHat)
+  ansible.builtin.include_tasks: 01_repo_config_rh.yml
+  when: ansible_os_family == "RedHat"
+
+- name: Create firewall rules on Master Nodes
+  ansible.builtin.include_tasks: 02_allow_ports_master.yml
+  when: "'k8-masters' in group_names"
+  
+- name: Create firewall rules on Worker Nodes
+  ansible.builtin.include_tasks: 02_allow_ports_worker.yml
+  when: "'k8-workers' in group_names"
+
+- name: Include task to disable swap memory
+  ansible.builtin.include_tasks: 03_disable_swap_memory.yml
+
+- name: Include task to install required tools
+  ansible.builtin.include_tasks: 04_install_tools.yml
+
+- name: Include task to preconfigure containerd
+  ansible.builtin.include_tasks: 05_preconf_containerd.yml
+
+

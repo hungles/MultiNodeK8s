@@ -1,0 +1,50 @@
+---
+- name: Habilitar puertos necesarios para los nodos worker
+  block:
+
+    - name: Habilitar firewalld si no está activo
+      ansible.builtin.service:
+            name: firewalld
+            state: started
+            enabled: yes
+      when: ansible_os_family == "RedHat"
+
+    - name: Abrir puertos requeridos en firewalld
+      ansible.posix.firewalld:
+        port: "{{ item }}/tcp"
+        permanent: yes
+        state: enabled
+      loop:
+        - 10250
+        - 10256
+        - 30000-32767
+        - 22
+      when: ansible_os_family == "RedHat"
+
+    - name: Recargar firewalld
+      ansible.builtin.command: firewall-cmd --reload
+      when: ansible_os_family == "RedHat"
+
+    - name: Asegurar que iptables-persistent esté instalado
+      ansible.builtin.apt:
+        name: iptables-persistent
+        state: present
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Abrir puertos en iptables
+      ansible.builtin.iptables:
+        chain: INPUT
+        protocol: tcp
+        destination_port: "{{ item }}"
+        jump: ACCEPT
+      loop:
+        - 10250
+        - 10256
+        - 22
+      when: ansible_os_family == "Debian"
+
+
+    - name: Guardar reglas iptables
+      ansible.builtin.command: netfilter-persistent save
+      when: ansible_os_family == "Debian"

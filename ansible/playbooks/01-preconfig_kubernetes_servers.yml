@@ -1,0 +1,7 @@
+---
+- name: Configure and install kubernetes and runtime
+  hosts: all
+  roles:
+     - common
+     - runtime
+     - k8s

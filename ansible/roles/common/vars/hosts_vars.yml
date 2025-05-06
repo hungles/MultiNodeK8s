@@ -1,0 +1,5 @@
+my_hosts:
+    - ip: 161.132.43.25
+      hostname: vps-master01
+    - ip: 161.132.43.24
+      hostname: vps-worker01

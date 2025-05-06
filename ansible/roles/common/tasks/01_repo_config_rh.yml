@@ -1,0 +1,37 @@
+---
+- name: Download and convert GPG keys in RedHat OS
+  block:
+    # Changing SELinux mode to permissive to avoid access restrictions
+    - name: Set SELinux to permissive mode
+      ansible.posix.selinux:
+        policy: targeted
+        state: permissive
+      
+    # A reboot is required for SELinux changes to take effect
+    - name: Reboot after modifying SELinux
+      ansible.builtin.reboot:
+    
+    # Adds the Kubernetes repository for installing Kubernetes components
+    - name: Add Kubernetes repository
+      ansible.builtin.blockinfile:
+        path: /etc/yum.repos.d/kubernetes.repo
+        block: |
+          [kubernetes]
+          name=Kubernetes
+          baseurl=https://pkgs.k8s.io/core:/stable:/v1.32/rpm/
+          enabled=1
+          gpgcheck=1
+          gpgkey=https://pkgs.k8s.io/core:/stable:/v1.32/rpm/repodata/repomd.xml.key
+          exclude=kubelet kubeadm kubectl cri-tools kubernetes-cni
+        create: yes
+      
+    # Installs the necessary package to manage repositories with dnf
+    - name: Install dnf-plugins-core (required for dnf config-manager)
+      dnf:
+        name: dnf-plugins-core
+        state: present
+      
+    # Adds the official Docker repository for installing Docker packages
+    - name: Add Docker repository
+      command: dnf config-manager --add-repo https://download.docker.com/linux/rhel/docker-ce.repo
+      
