@@ -13,6 +13,10 @@ variable "key_name" {
   type = string
 }
 
+variable "instance_type" {
+  type = string
+}
+
 variable "vpc_security_group_ids" {
   description = "List of security group IDs to associate with the instance"
   type        = list(string)

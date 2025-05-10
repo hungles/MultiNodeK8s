@@ -43,7 +43,3 @@
     - name: Imprimir el resultado en pantalla
       debug:
         msg: "{{ status_containerd.stdout }}"
-
-    - name: Esperar a que el usuario presione Enter para continuar
-      pause:
-        prompt: "Presiona Enter para continuar..."

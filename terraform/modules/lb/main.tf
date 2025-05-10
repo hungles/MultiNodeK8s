@@ -16,13 +16,15 @@ resource "aws_lb_target_group" "k8_cp_tg" {
   vpc_id      = var.vpc_id
   target_type = "instance"
 
-  # health_check {
-  #   protocol            = "TCP"
-  #   port                = "22"
-  #   healthy_threshold   = 2
-  #   unhealthy_threshold = 2
-  #   interval            = 5
-  # }
+  health_check {
+    protocol            = "TCP"
+    port                = 22
+    healthy_threshold   = 2
+    unhealthy_threshold = 10
+    timeout             = 3
+    interval            = 10
+  } 
+
 }
 
 resource "aws_lb_listener" "k8_cp_listener" {

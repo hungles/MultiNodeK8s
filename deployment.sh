@@ -1,5 +1,26 @@
 #!/bin/bash
 
+requirements=("terraform" "ansible" "aws")
+
+missing=()
+
+for prog in "${requirements[@]}"; do
+    if ! command -v "$prog" >/dev/null 2>&1; then
+        faltantes+=("$prog")
+    fi
+done
+
+if [ ${#missing[@]} -eq 0 ]; then
+    echo "✅ All the dependencies have been installed:"
+else
+    echo "❌ The following dependencies are missing "
+    for m in "${missing[@]}"; do
+        echo "  - $m"
+    done
+    exit 1
+fi
+
+
 cd terraform/
 
 terraform init
@@ -7,7 +28,6 @@ terraform apply -auto-approve
 terraform output > ips.txt
 
 
-# Inicializar diccionarios
 declare -A masters
 declare -A workers
 
@@ -33,7 +53,7 @@ while IFS= read -r line; do
     fi
 done <<< "$content"
 
-echo "load_balancer_dns: $(grep "lb =" ips.txt ips.txt | cut -d"=" -f 2 | xargs)" >> ../ansible/roles/master/vars/main.yml
+echo -e "\nload_balancer_dns: $(grep "lb =" ips.txt | cut -d"=" -f2 | xargs)" >> ../ansible/roles/master/vars/main.yml
 
 cd ../ansible/
 
@@ -51,5 +71,10 @@ done
 
 rm -f ../terraform/ips.txt
 
-#ansible-playbook -i inventory.ini playbooks/01-preconfig_kubernetes_servers.yml
-#ansible-playbook -i inventory.ini playbooks/02-configure_nodes.yml
+echo "Wait for the Load Balancer"
+sleep 60
+
+ansible-playbook -i inventory.ini playbooks/01-preconfig_kubernetes_servers.yml
+ansible-playbook -i inventory.ini playbooks/02-configure_nodes.yml
+
+grep -v 'load_balancer_dns:' roles/master/vars/main.yml > roles/master/vars/tmp && mv roles/master/vars/tmp roles/master/vars/main.yml

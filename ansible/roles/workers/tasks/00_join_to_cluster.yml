@@ -3,3 +3,20 @@
   block:
     - name: Run the join command
       command: "{{ hostvars[groups['k8-masters'][0]].join_command }}"
+
+    - name: Create a .kube directory in the current user's home page in other masters
+      file:
+        path: "/home/{{ ansible_user_id }}/.kube"
+        state: directory
+        owner: "{{ ansible_user_id }}"
+        group: "{{ ansible_user_id }}"
+        mode: 0755
+
+    - name: Copy the admin.conf to ~/.kube/config in other masters
+      copy:
+        src: /etc/kubernetes/admin.conf
+        dest: "/home/{{ ansible_user_id }}/.kube/config"
+        remote_src: yes
+        owner: "{{ ansible_user_id }}"
+        group: "{{ ansible_user_id }}"
+        mode: 0600
