@@ -45,7 +45,7 @@
 
     - name: Wait 100 seconds before continuing
       pause:
-        seconds: 100
+        seconds: 30
       when: is_first_master
 
     - name: Apply Calico as CNI plugin

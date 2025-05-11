@@ -1,6 +1,10 @@
 variable "aws_region" {
   type = string
-  default = "us-east-1"  #Change for your region
+  default = "us-east-1"  # Change for your region
+}
+
+variable "az" {
+  default = "us-east-1a" # Change for your AZ
 }
 
 variable "instance_type" {
@@ -8,17 +12,12 @@ variable "instance_type" {
   default = "t2.medium"  #Change for the type of the EC2 Instance
 }
 
-variable "subnet_id" {
+variable "vpc_cidr" {
   type = string
-  default = "subnet-0b6a0fb2d405b768d"
+  default = "10.0.0.0/16" # Change to the CIDR of the VPC
 }
 
-variable "vpc_id" {
+variable "subnet_cidr"{
   type = string
-  default = "vpc-0f2821a968bf15dcb"
-}
-
-variable "subnet_ids" {
-  type = string
-  default = "subnet-0b6a0fb2d405b768d"
+  default = "10.0.1.0/24" # Change to the CIDR of the subnet
 }
