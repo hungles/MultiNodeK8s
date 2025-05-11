@@ -8,8 +8,8 @@
   include_vars:
     file: "../vars/repo_vars.yml"
 
-- name: Include task to update servers
-  ansible.builtin.include_tasks: 00_hostname_host.yml
+- name: Include task to check connectivity
+  ansible.builtin.include_tasks: 00-check-ping.yml
 
 - name: Include task to add GPG keys (Debian)
   ansible.builtin.include_tasks: 01_repo_config_deb.yml

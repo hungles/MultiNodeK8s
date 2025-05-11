@@ -10,15 +10,15 @@ variable "instance_type" {
 
 variable "subnet_id" {
   type = string
-  default = ""
+  default = "subnet-0b6a0fb2d405b768d"
 }
 
 variable "vpc_id" {
   type = string
-  default = ""
+  default = "vpc-0f2821a968bf15dcb"
 }
 
 variable "subnet_ids" {
   type = string
-  default = ""
+  default = "subnet-0b6a0fb2d405b768d"
 }

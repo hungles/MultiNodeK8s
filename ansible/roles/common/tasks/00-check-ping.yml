@@ -1,0 +1,6 @@
+---
+- name: Change the hostname and modify the /etc/hosts file
+  block:
+
+    - name: Hacer ping a los hosts
+      ansible.builtin.ping:

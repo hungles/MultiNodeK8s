@@ -72,7 +72,7 @@ done
 rm -f ../terraform/ips.txt
 
 echo "Wait for the Load Balancer"
-sleep 60
+sleep 150
 
 ansible-playbook -i inventory.ini playbooks/01-preconfig_kubernetes_servers.yml
 ansible-playbook -i inventory.ini playbooks/02-configure_nodes.yml
