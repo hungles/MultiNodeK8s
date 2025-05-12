@@ -18,7 +18,7 @@ resource "aws_lb_target_group" "k8_cp_tg" {
 
   health_check {
     protocol            = "TCP"
-    port                = 22
+    port                = 6443
     healthy_threshold   = 2
     unhealthy_threshold = 10
     timeout             = 3

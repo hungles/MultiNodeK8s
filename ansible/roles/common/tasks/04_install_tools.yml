@@ -2,21 +2,21 @@
 - name: Install necessary tools
   block:
 
-    - name: Perform a full upgrade on Debian-based systems
-      apt:
-        upgrade: full                # Performs a full upgrade (installs updates and removes obsolete packages)
-        update_cache: yes            # Updates the package cache before upgrading
-      when: ansible_os_family == "Debian"  # Runs only on Debian-based systems
+    # - name: Perform a full upgrade on Debian-based systems
+    #   apt:
+    #     upgrade: full                # Performs a full upgrade (installs updates and removes obsolete packages)
+    #     update_cache: yes            # Updates the package cache before upgrading
+    #   when: ansible_os_family == "Debian"  # Runs only on Debian-based systems
 
-    - name: Perform a full upgrade on RedHat-based systems
-      dnf:
-        name: "*"                    # Upgrades all installed packages to their latest versions
-        state: latest
-        update_cache: yes            # Updates the package cache before upgrading
-      when: ansible_os_family == "RedHat"  # Runs only on RedHat-based systems
+    # - name: Perform a full upgrade on RedHat-based systems
+    #   dnf:
+    #     name: "*"                    # Upgrades all installed packages to their latest versions
+    #     state: latest
+    #     update_cache: yes            # Updates the package cache before upgrading
+    #   when: ansible_os_family == "RedHat"  # Runs only on RedHat-based systems
 
-    - name: Reboot after updating packages
-      ansible.builtin.reboot:        # Reboots the system to apply updates (if required)
+    # - name: Reboot after updating packages
+    #   ansible.builtin.reboot:        # Reboots the system to apply updates (if required)
 
     - name: Install necessary tools for Debian-based systems
       apt:

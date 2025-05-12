@@ -28,7 +28,7 @@
 
     - name: Wait 60 seconds before continuing
       pause:
-        seconds: 60
+        seconds: 30
       when: is_first_master
 
     - name: Run the kubeadm command and filter the output with grep
