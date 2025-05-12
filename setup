@@ -1,43 +1,85 @@
 #!/bin/bash
 
-requirements=("terraform" "ansible" "aws")
+# Add comment
+KUBE_DIR="$HOME/.kube"
+CONFIG_FILE="$KUBE_DIR/config"
 
+# Declare associative arrays to store master and worker nodes
+declare -A masters
+declare -A workers
+
+# Define required tools
+requirements=("terraform" "ansible" "aws")
 missing=()
 
+# Function to check SSH connectivity to a given host
+check_ssh_connection() {
+  local host=$1 # Takes the first argument as the host
+  # Tries to SSH into the host with a timeout of 5 seconds and no strict host key checking
+  ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa.pub ubuntu@"$host" 'echo SSH_OK' &>/dev/null
+}
+
+# Function to wait until all hosts of a given type (masters or workers) are reachable via SSH
+wait_for_ssh() {
+  local -n hosts=$1 # Use a nameref to refer to the array passed as the first argument
+  local type=$2     # Type of host group ("masters" or "workers")
+  echo "🔄 Waiting for SSH connection with all $type..."
+
+  local pending=1
+  while [[ $pending -ne 0 ]]; do
+    pending=0
+    for ip in "${hosts[@]}"; do
+      echo -n "Check $ip... "
+      if check_ssh_connection "$ip"; then
+        echo "✅ OK"
+      else
+        echo "❌ Fail, retry in 5s..."
+        pending=1
+      fi
+    done
+    if [[ $pending -ne 0 ]]; then
+      sleep 5
+    fi
+  done
+
+  echo "✅ All the $type have SSH connection."
+}
+
+# Check for missing dependencies
 for prog in "${requirements[@]}"; do
     if ! command -v "$prog" >/dev/null 2>&1; then
-        faltantes+=("$prog")
+        missing+=("$prog")
     fi
 done
 
+# Print the result of the dependency check
 if [ ${#missing[@]} -eq 0 ]; then
     echo "✅ All the dependencies have been installed:"
 else
-    echo "❌ The following dependencies are missing "
+    echo "❌ The following dependencies are missing:"
     for m in "${missing[@]}"; do
         echo "  - $m"
     done
     exit 1
 fi
 
-
+# Navigate to the Terraform directory
 cd terraform/
 
+# Initialize and apply Terraform configuration
 terraform init
 terraform apply -auto-approve
+
+# Output the generated IPs and store them in a file
 terraform output > ips.txt
 
-
-declare -A masters
-declare -A workers
-
+# Read the contents of the file
 content=$(cat ips.txt)
 
-# Read the file line by line
+# Parse the IPs and DNS names from the output and populate the associative arrays
 while IFS= read -r line; do
     name=$(echo "$line" | cut -d '=' -f1 | xargs)
     value=$(echo "$line" | cut -d '=' -f2- | tr -d '"' | xargs)
-    # Check if the line contains "master" or "worker"
     if [[ "$name" == *"master"* ]]; then
         if [[ "$name" == *"public_dns" ]]; then
             current_dns="$value"
@@ -53,11 +95,13 @@ while IFS= read -r line; do
     fi
 done <<< "$content"
 
+# Append the load balancer DNS to the Ansible variables file
 echo -e "\nload_balancer_dns: $(grep "lb =" ips.txt | cut -d"=" -f2 | xargs)" >> ../ansible/roles/master/vars/main.yml
 
+# Go to the Ansible directory
 cd ../ansible/
 
-# Create inventory.ini file
+# Create the Ansible inventory file
 echo "[k8-masters]" > inventory.ini
 for dns in "${!masters[@]}"; do
     echo "$dns ansible_host=${masters[$dns]}" >> inventory.ini
@@ -69,12 +113,38 @@ for dns in "${!workers[@]}"; do
     echo "$dns ansible_host=${workers[$dns]}" >> inventory.ini
 done
 
+# Clean up the temporary IP output file
 rm -f ../terraform/ips.txt
 
-echo "Wait for the Load Balancer"
-sleep 150
+# Wait for SSH to be ready on all hosts
+echo "Wait for the Hosts"
+wait_for_ssh masters "masters"
+wait_for_ssh workers "workers"
 
+# Run Ansible playbooks to configure the Kubernetes cluster
 ansible-playbook -i inventory.ini playbooks/01-preconfig_kubernetes_servers.yml
 ansible-playbook -i inventory.ini playbooks/02-configure_nodes.yml
 
+# Remove the load balancer DNS variable after use to avoid future conflicts
 grep -v 'load_balancer_dns:' roles/master/vars/main.yml > roles/master/vars/tmp && mv roles/master/vars/tmp roles/master/vars/main.yml
+
+# Check if the ~/.kube directory exists
+if [ ! -d "$KUBE_DIR" ]; then
+    echo "Directorio $KUBE_DIR no existe. Creándolo..."
+    mkdir -p "$KUBE_DIR"
+fi
+
+for dns in "${!masters[@]}"; do
+    first_ip="${masters[$dns]}"
+    break
+done
+
+# Check if the config file exists inside ~/.kube
+if [ ! -f "$CONFIG_FILE" ]; then
+    echo "Archivo $CONFIG_FILE no existe. Creándolo..."
+    touch "$CONFIG_FILE"
+    ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no ubuntu@"$first_ip" 'cat ~/.kube/config' > "$CONFIG_FILE"
+else
+    echo "" >> "$CONFIG_FILE"
+    ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no ubuntu@"$first_ip" 'cat ~/.kube/config' >> "$CONFIG_FILE"
+fi

@@ -26,7 +26,7 @@
         mode: 0600
       when: is_first_master
 
-    - name: Wait 60 seconds before continuing
+    - name: Wait 30 seconds before continuing
       pause:
         seconds: 30
       when: is_first_master
@@ -43,18 +43,13 @@
         cert_key: "{{ kube_cert.stdout }}"
       when: is_first_master
 
-    - name: Wait 100 seconds before continuing
-      pause:
-        seconds: 30
-      when: is_first_master
-
     - name: Apply Calico as CNI plugin
       shell: |
         kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.26.1/manifests/calico.yaml
       become_user: "{{ ansible_user_id }}"
       when: is_first_master
 
-    - name: Wait  seconds before continuing
+    - name: Wait 30 seconds for Calico Pods
       pause:
         seconds: 30
       when: is_first_master

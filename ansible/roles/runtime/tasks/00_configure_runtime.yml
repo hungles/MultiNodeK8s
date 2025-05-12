@@ -1,14 +1,14 @@
 ---
-- name: Instalar y configurar el runtime de kubernetes
+- name: Install and configure the Kubernetes runtime
   block:
 
-    - name: Instalar herramientas de kubernetes en Debian
+    - name: Installing Kubernetes Tools on Debian
       apt:
         update_cache: true
         name: containerd.io
       when: ansible_os_family == "Debian"
     
-    - name: Instalar herramientas de kubernetes en Debian
+    - name: Installing Kubernetes Tools on Debian
       dnf:
         name: "containerd.io"
         update_cache: yes
@@ -23,7 +23,7 @@
     - name: Generate default containerd configuration
       ansible.builtin.shell: containerd config default | tee /etc/containerd/config.toml
     
-    - name: Modificar SystemdCgroup en /etc/containerd/config.toml
+    - name: Modify SystemdCgroup in /etc/containerd/config.toml
       replace:
         path: /etc/containerd/config.toml
         regexp: 'SystemdCgroup\s*=\s*false'
@@ -34,12 +34,3 @@
         name: containerd
         state: restarted
         enabled: yes
-      
-    - name: Get status of containerd
-      ansible.builtin.command:
-        cmd: systemctl status containerd.service
-      register: status_containerd
-
-    - name: Imprimir el resultado en pantalla
-      debug:
-        msg: "{{ status_containerd.stdout }}"

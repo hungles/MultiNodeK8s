@@ -1,9 +1,4 @@
 ---
-# roles/common/tasks/main.yml
-- name: Load variables from hosts_vars.yml
-  include_vars:
-    file: "../vars/hosts_vars.yml"
-
 - name: Load variables from repo_vars.yml
   include_vars:
     file: "../vars/repo_vars.yml"
