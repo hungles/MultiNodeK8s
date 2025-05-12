@@ -10,7 +10,7 @@ variable "vpc_id" {
 }
 
 variable "allowed_cidrs" {
-  description = "List of CIDR blocks allowed to SSH"
+  description = "List of CIDR blocks allowed to SSH and KubeAPI"
   type        = list(string)
   default     = ["0.0.0.0/0"]
 }

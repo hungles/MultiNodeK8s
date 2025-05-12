@@ -1,18 +1,16 @@
 resource "aws_security_group" "ssh_sg" {
   name        = var.sg_name
-  description = "Allow SSH and Kubernetes API access"
+  description = "Allow Kubernetes API access"
   vpc_id      = var.vpc_id
 
-  # Permitir SSH (puerto 22)
   ingress {
-    description = "SSH from anywhere"
+    description = "Accept all ports"
     from_port   = 0
     to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = var.allowed_cidrs
+    protocol    = -1
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Salida total
   egress {
     from_port   = 0
     to_port     = 0

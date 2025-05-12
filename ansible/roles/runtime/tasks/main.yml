@@ -1,4 +1,4 @@
 ---
 #roles/common/tasks/main.yml
-- name: Incluir tarea para actualizar los servidores
+- name: Include task to install Kubernetes components
   ansible.builtin.include_tasks: 00_configure_runtime.yml

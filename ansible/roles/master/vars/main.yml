@@ -1,3 +1,15 @@
 is_first_master: "{{ inventory_hostname == groups['k8-masters'][0] }}"
 subnet_kubernetes: 10.20.0.0/16
 ansible_user_id: "ubuntu"
+
+
+
+
+
+
+
+
+
+
+
+
