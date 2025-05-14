@@ -1,16 +1,43 @@
 #!/bin/bash
 
-# Add comment
+requirements=("terraform" "ansible" "aws")
+missing=()
+main_file=terraform/main.tf
+output_file=terraform/outputs.tf
+os_file=terraform/variables.tf
+variables_file=terraform/variables.tf
+options=("Ubuntu" "Debian" "Amazon Linux")
+selected=0
 KUBE_DIR="$HOME/.kube"
 CONFIG_FILE="$KUBE_DIR/config"
 
 # Declare associative arrays to store master and worker nodes
 declare -A masters
 declare -A workers
+declare -A ami_map
 
-# Define required tools
-requirements=("terraform" "ansible" "aws")
-missing=()
+# Check for missing dependencies
+for prog in "${requirements[@]}"; do
+    if ! command -v "$prog" >/dev/null 2>&1; then
+        missing+=("$prog")
+    fi
+done
+
+# Print the result of the dependency check
+if [ ${#missing[@]} -eq 0 ]; then
+    echo "✅ All the dependencies have been installed:"
+else
+    echo "❌ The following dependencies are missing:"
+    for m in "${missing[@]}"; do
+        echo "  - $m"
+    done
+    exit 1
+fi
+
+# Mapa de AMIs por sistema operativo
+ami_map["Ubuntu"]="ami-0f9de6e2d2f067fca"
+ami_map["Debian"]="ami-0779caf41f9ba54f0"
+ami_map["Amazon Linux"]="ami-09e67e426f25ce0d7"
 
 # Function to check SSH connectivity to a given host
 check_ssh_connection() {
@@ -45,23 +72,136 @@ wait_for_ssh() {
   echo "✅ All the $type have SSH connection."
 }
 
-# Check for missing dependencies
-for prog in "${requirements[@]}"; do
-    if ! command -v "$prog" >/dev/null 2>&1; then
-        missing+=("$prog")
+# Dibujar el menú
+draw_menu() {
+  clear
+  echo "Welcome to K8Multinode, a program that makes it easy to deploy Kubernetes clusters in the cloud."
+  echo "Select the operating system that your nodes (masters and workers) will have:"
+  echo
+  for i in "${!options[@]}"; do
+    if [[ $i == $selected ]]; then
+      echo -e "> \e[1;32m${options[$i]}\e[0m"
+    else
+      echo "  ${options[$i]}"
     fi
+  done
+}
+
+# Bucle principal del menú
+while true; do
+  draw_menu
+  read -rsn1 key
+  if [[ $key == $'\x1b' ]]; then
+    read -rsn2 -t 0.1 key2
+    key+=$key2
+  fi
+
+  case "$key" in
+    $'\x1b[A') # Flecha arriba
+      ((selected--))
+      if ((selected < 0)); then selected=$((${#options[@]} - 1)); fi
+      ;;
+    $'\x1b[B') # Flecha abajo
+      ((selected++))
+      if ((selected >= ${#options[@]})); then selected=0; fi
+      ;;
+    "") # Enter
+      break
+      ;;
+  esac
 done
 
-# Print the result of the dependency check
-if [ ${#missing[@]} -eq 0 ]; then
-    echo "✅ All the dependencies have been installed:"
-else
-    echo "❌ The following dependencies are missing:"
-    for m in "${missing[@]}"; do
-        echo "  - $m"
-    done
-    exit 1
-fi
+# Guardar selección y AMI correspondiente
+selected_os="${options[$selected]}"
+ami_id="${ami_map[$selected_os]}"
+
+echo "Selected operating system: $selected_os"
+echo "Corresponding AMI: $ami_id"
+
+echo "Your Masters and Workers will be installed with ${options[$selected]}"
+
+read -p "How many control nodes do you want: " n_control
+read -p "How many worker nodes do you want: " n_workers
+
+for ((i=1; i<=n_control; i++)); do
+    cat >> "$main_file" <<EOF
+module "k8_master_${i}" {
+    source        = "./modules/master/ec2"
+    instance_name = "K8-Master-${i}"
+    ami           = var.ami
+    instance_type = var.instance_type
+    subnet_id     = module.k8_vpc.subnet_id
+    key_name      = aws_key_pair.mykey.key_name
+    vpc_security_group_ids = [module.ssh_sg.security_group_id]
+}
+
+EOF
+
+    cat >> "$output_file" <<EOF
+output "k8_master_${i}_public_ip" {
+  value = module.k8_master_${i}.k8_masters_public_ip
+}
+
+output "k8_master_${i}_public_dns" {
+  value = module.k8_master_${i}.k8_masters_public_dns
+}
+
+EOF
+done
+
+for ((i=1; i<=n_workers; i++)); do
+    cat >> "$main_file" <<EOF
+module "k8_worker_${i}" {
+    source        = "./modules/worker/ec2"
+    instance_name = "K8-Worker-${i}"
+    instance_type = var.instance_type
+    ami           = var.ami
+    subnet_id     = module.k8_vpc.subnet_id
+    key_name      = aws_key_pair.mykey.key_name
+    vpc_security_group_ids = [module.ssh_sg.security_group_id]
+}
+
+EOF
+
+    cat >> "$output_file" <<EOF
+output "k8_worker_${i}_public_ip" {
+  value = module.k8_worker_${i}.k8_workers_public_ip
+}
+
+output "k8_worker_${i}_public_dns" {
+  value = module.k8_worker_${i}.k8_workers_public_dns
+}
+
+EOF
+
+done
+
+cat >> "$output_file" <<EOF
+output "lb" {
+  value = module.control_plane_lb.alb_dns_name
+}
+EOF
+
+sed -i "s|image_id_replace|$ami_id|g" $variables_file
+
+echo 'module "control_plane_lb" {' >> "$main_file"
+echo '  source        = "./modules/lb"' >> "$main_file"
+echo '  lb_name       = "k8s-cp-lb"' >> "$main_file"
+echo '  vpc_id        = module.k8_vpc.vpc_id' >> "$main_file"
+echo '  subnet_ids    = [module.k8_vpc.subnet_id]' >> "$main_file"
+echo '  instance_ids  = [' >> "$main_file"
+
+# Agregar cada instancia master al array de instance_ids
+for ((i=1; i<=n_control; i++)); do
+  if [[ $i -eq $n_control ]]; then
+    echo "    module.k8_master_$i.instance_id" >> "$main_file"
+  else
+    echo "    module.k8_master_$i.instance_id," >> "$main_file"
+  fi
+done
+
+echo '  ]' >> "$main_file"
+echo '}' >> "$main_file"
 
 # Navigate to the Terraform directory
 cd terraform/

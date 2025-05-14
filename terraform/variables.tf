@@ -21,3 +21,8 @@ variable "subnet_cidr"{
   type = string
   default = "10.0.1.0/24" # Change to the CIDR of the subnet
 }
+
+variable "ami" {
+  type = string
+  default = "image_id_replace"
+}
