@@ -1,3 +1,14 @@
 #SPDX-License-Identifier: MIT-0
 ---
 # tasks file for common
+
+- name: Load variables from repo_vars.yml
+  include_vars:
+    file: "../vars/main.yml"
+
+- name: Include task to check connectivity
+  ansible.builtin.include_tasks: 00-check-connectivity.yml
+
+- name: Include task to add GPG keys (Debian)
+  ansible.builtin.include_tasks: 01-repo-config-deb.yml
+  when: ansible_os_family == "Debian"

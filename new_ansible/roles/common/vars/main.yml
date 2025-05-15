@@ -7,6 +7,10 @@ k8_33_gpg_deb: "https://pkgs.k8s.io/core:/stable:/v1.33/deb/Release.key" # Kuber
 k8_32_gpg_deb: "https://pkgs.k8s.io/core:/stable:/v1.32/deb/Release.key" # Kubernetes 1.32
 k8_31_gpg_deb: "https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key" # Kubernetes 1.31
 
+k8_33_pkg_deb: "https://pkgs.k8s.io/core:/stable:/v1.33/deb/ /" # Kubernetes 1.33
+k8_32_pkg_deb: "https://pkgs.k8s.io/core:/stable:/v1.32/deb/ /" # Kubernetes 1.32
+k8_31_pkg_deb: "https://pkgs.k8s.io/core:/stable:/v1.31/deb/ /" # Kubernetes 1.31
+
 
 docker_gpg_ubuntu: "https://download.docker.com/linux/ubuntu/gpg"
 docker_gpg_debian: "https://download.docker.com/linux/debian/gpg"
