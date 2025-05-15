@@ -1,0 +1,54 @@
+- name: Set Kubernetes GPG key URL based on env variable
+  set_fact:
+    k8s_gpg_url: >-
+      {{ k8_33_gpg_deb if env == 'k33' else
+         k8_32_gpg_deb if env == 'k32' else
+         k8_31_gpg_deb if env == 'k31' else '' }}
+
+- name: Set Docker GPG key URL based on os variable
+  set_fact:
+    docker_gpg_url: >
+      {{ docker_gpg_ubuntu if os == 'ubuntu' else
+         docker_gpg_debian if os == 'debian' else '' }}
+
+- name: Download Kubernetes GPG key in ASCII format
+  ansible.builtin.get_url:
+    url: "{{ k8s_gpg_url }}"
+    dest: /tmp/kubernetes.gpg
+  when: k8s_gpg_url != ''
+
+# Convert the downloaded Kubernetes GPG key to binary format and move it to the trusted keyring
+- name: Convert Kubernetes GPG key to binary and copy to /etc/apt/trusted.gpg.d
+  ansible.builtin.command:
+    cmd: gpg --dearmor -o /etc/apt/trusted.gpg.d/kubernetes-apt-keyring.gpg /tmp/kubernetes.gpg
+    creates: /etc/apt/trusted.gpg.d/kubernetes-apt-keyring.gpg
+
+# Download Docker GPG key in ASCII format
+- name: Download Docker GPG key in ASCII format
+  ansible.builtin.get_url:
+    url: "{{ docker_gpg_url }}"
+    dest: /tmp/containerd.gpg
+  when: docker_gpg_url != ''
+
+# Convert the downloaded Docker GPG key to binary format and move it to the trusted keyring
+- name: Convert Docker GPG key to binary and copy to /etc/apt/trusted.gpg.d
+  ansible.builtin.command:
+    cmd: gpg --dearmor -o /etc/apt/trusted.gpg.d/docker-archive-keyring.gpg /tmp/containerd.gpg
+    creates: /etc/apt/trusted.gpg.d/docker-archive-keyring.gpg
+
+
+
+
+
+# Add the Kubernetes repository to the sources list
+- name: Copy Kubernetes repository URL to /etc/apt/sources.list.d
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list.d/kubernetes.list
+    content: "deb [signed-by=/etc/apt/trusted.gpg.d/kubernetes-apt-keyring.gpg] {{ k8_32_repo_deb }}"
+
+# Add the Docker repository to the sources list
+- name: Copy Docker repository URL to /etc/apt/sources.list.d
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list.d/docker.list
+    content: "deb [signed-by=/etc/apt/trusted.gpg.d/docker-archive-keyring.gpg] {{ docker_repo }}"
+      

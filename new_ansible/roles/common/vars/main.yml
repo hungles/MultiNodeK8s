@@ -1,0 +1,15 @@
+#SPDX-License-Identifier: MIT-0
+---
+# vars file for common
+
+#Kubernetes GPG Key in Debian Distribution
+k8_33_gpg_deb: "https://pkgs.k8s.io/core:/stable:/v1.33/deb/Release.key" # Kubernetes 1.33
+k8_32_gpg_deb: "https://pkgs.k8s.io/core:/stable:/v1.32/deb/Release.key" # Kubernetes 1.32
+k8_31_gpg_deb: "https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key" # Kubernetes 1.31
+
+
+docker_gpg_ubuntu: "https://download.docker.com/linux/ubuntu/gpg"
+docker_gpg_debian: "https://download.docker.com/linux/debian/gpg"
+
+
+docker_repo: "https://download.docker.com/linux/ubuntu jammy stable" # Docker for ubuntu 22.04
