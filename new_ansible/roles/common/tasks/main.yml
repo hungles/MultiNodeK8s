@@ -27,3 +27,9 @@
 
 - name: Include task to install required tools
   ansible.builtin.include_tasks: 05-install-tools.yml
+
+- name: Include task to disable swap memory
+  ansible.builtin.include_tasks: 06-disable-swap-memory.yml
+
+- name: Include task to preconfigure containerd
+  ansible.builtin.include_tasks: 07-preconf-containerd.yml
