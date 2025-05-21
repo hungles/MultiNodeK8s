@@ -16,3 +16,6 @@
 - name: Include task to add GPG keys and Repos (RedHat)
   ansible.builtin.include_tasks: 02-repo-config-rh.yml
   when: ansible_os_family == "RedHat"
+
+- name: Include task to allow Kubernetes Ports in Masters
+  ansible.builtin.include_tasks: 03-allow-ports-master.yml
