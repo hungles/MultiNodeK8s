@@ -1,0 +1,32 @@
+- name: Installing Kubernetes Tools on Debian
+  apt:
+    update_cache: true
+    name: containerd.io
+  when: ansible_os_family == "Debian"
+    
+- name: Installing Kubernetes Tools on Debian
+  dnf:
+    name: "containerd.io"
+    update_cache: yes
+  when: ansible_os_family == "RedHat"
+    
+- name: Ensure /etc/containerd directory exists
+  ansible.builtin.file:
+    path: /etc/containerd
+    state: directory
+    mode: '0755'
+
+- name: Generate default containerd configuration
+  ansible.builtin.shell: containerd config default | tee /etc/containerd/config.toml
+    
+- name: Modify SystemdCgroup in /etc/containerd/config.toml
+  replace:
+    path: /etc/containerd/config.toml
+    regexp: 'SystemdCgroup\s*=\s*false'
+    replace: 'SystemdCgroup = true'
+
+- name: Restart containerd service
+  ansible.builtin.systemd:
+    name: containerd
+    state: restarted
+    enabled: yes
