@@ -1,3 +1,2 @@
-#SPDX-License-Identifier: MIT-0
----
-# tasks file for k8s
+- name: Installing necessary kubernetes tools
+  ansible.builtin.include_tasks: 00-configure-k8.yml

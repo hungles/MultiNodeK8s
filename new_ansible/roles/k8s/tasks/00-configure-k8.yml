@@ -1,0 +1,38 @@
+- name: Install Kubernetes tools
+  apt:
+    update_cache: yes
+    name:
+      - kubelet
+      - kubeadm
+      - kubectl
+  when: ansible_os_family == "Debian"
+
+- name: Install kubelet, kubeadm, and kubectl on RedHat-based systems
+  ansible.builtin.dnf:
+    name:
+      - kubelet
+      - kubeadm
+      - kubectl
+    state: latest
+    update_cache: yes
+    disable_excludes: kubernetes
+  when: ansible_os_family == "RedHat"
+ 
+
+- name: Prevent kubelet from being updated
+  ansible.builtin.dpkg_selections:
+    name: kubelet
+    selection: hold
+  when: ansible_os_family == "Debian"
+
+- name: Prevent kubeadm from being updated
+  ansible.builtin.dpkg_selections:
+    name: kubeadm
+    selection: hold
+  when: ansible_os_family == "Debian"
+
+- name: Prevent kubectl from being updated
+  ansible.builtin.dpkg_selections:
+    name: kubectl
+    selection: hold
+  when: ansible_os_family == "Debian"
