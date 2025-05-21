@@ -19,7 +19,7 @@
          k8_32_pkg_rh if env == 'k32' else
          k8_31_pkg_rh if env == 'k31' else '' }}
 
-- name: Plantilla para el repositorio de Kubernetes
+- name: Kubernetes Repository Template
   template:
     src: kubernetes-repo.j2
     dest: /etc/yum.repos.d/kubernetes.repo
