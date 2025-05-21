@@ -19,3 +19,8 @@
 
 - name: Include task to allow Kubernetes Ports in Masters
   ansible.builtin.include_tasks: 03-allow-ports-master.yml
+  when: "'k8-masters' in group_names"
+
+- name: Include task to allow Kubernetes Ports in Workers
+  ansible.builtin.include_tasks: 04-allow-ports-worker.yml
+  when: "'k8-workers' in group_names"
