@@ -1,7 +1,4 @@
 # common/tasks/00-check-connectivity.yml
 
-- name: Ping hosts to test connectivity
-  block:
-
-    - name: Ping the hosts
-      ansible.builtin.ping:
+- name: Ping the hosts
+  ansible.builtin.ping:

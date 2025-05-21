@@ -11,6 +11,13 @@ selected=0
 KUBE_DIR="$HOME/.kube"
 CONFIG_FILE="$KUBE_DIR/config"
 
+# Sample map of AMIs by OS (you can replace this with actual values)
+declare -A ami_map=( ["Ubuntu"]="ami-0f9de6e2d2f067fca" ["Debian"]="ami-0779caf41f9ba54f0" ["CentOS"]="ami-centos" )
+
+# Kubernetes version options
+k8s_versions=("1.31" "1.32" "1.33")
+k8s_version_codes=("k31" "k32" "k33")
+
 # Declare associative arrays to store master and worker nodes
 declare -A masters
 declare -A workers
@@ -33,11 +40,6 @@ else
     done
     exit 1
 fi
-
-# Mapa de AMIs por sistema operativo
-ami_map["Ubuntu"]="ami-0f9de6e2d2f067fca"
-ami_map["Debian"]="ami-0779caf41f9ba54f0"
-ami_map["Amazon Linux"]="ami-09e67e426f25ce0d7"
 
 # Function to check SSH connectivity to a given host
 check_ssh_connection() {
@@ -72,7 +74,11 @@ wait_for_ssh() {
   echo "✅ All the $type have SSH connection."
 }
 
-# Dibujar el menú
+# Available OS options
+options=("Ubuntu" "Debian" "CentOS")
+selected=0
+
+# Function to draw the OS selection menu
 draw_menu() {
   clear
   echo "Welcome to K8Multinode, a program that makes it easy to deploy Kubernetes clusters in the cloud."
@@ -87,7 +93,7 @@ draw_menu() {
   done
 }
 
-# Bucle principal del menú
+# Main menu loop for OS selection
 while true; do
   draw_menu
   read -rsn1 key
@@ -97,23 +103,81 @@ while true; do
   fi
 
   case "$key" in
-    $'\x1b[A') # Flecha arriba
+    $'\x1b[A') # Up arrow
       ((selected--))
       if ((selected < 0)); then selected=$((${#options[@]} - 1)); fi
       ;;
-    $'\x1b[B') # Flecha abajo
+    $'\x1b[B') # Down arrow
       ((selected++))
       if ((selected >= ${#options[@]})); then selected=0; fi
       ;;
-    "") # Enter
+    "") # Enter key
       break
       ;;
   esac
 done
 
-# Guardar selección y AMI correspondiente
+# Save the selected OS
 selected_os="${options[$selected]}"
+
 ami_id="${ami_map[$selected_os]}"
+
+# Reset selection index for the Kubernetes version menu
+selected=0
+
+# Function to draw the Kubernetes version menu
+draw_k8s_menu() {
+  clear
+  echo "Select the Kubernetes version to deploy:"
+  echo
+  for i in "${!k8s_versions[@]}"; do
+    if [[ $i == $selected ]]; then
+      echo -e "> \e[1;34m${k8s_versions[$i]}\e[0m"
+    else
+      echo "  ${k8s_versions[$i]}"
+    fi
+  done
+}
+
+# Menu loop for Kubernetes version selection
+while true; do
+  draw_k8s_menu
+  read -rsn1 key
+  if [[ $key == $'\x1b' ]]; then
+    read -rsn2 -t 0.1 key2
+    key+=$key2
+  fi
+
+  case "$key" in
+    $'\x1b[A') # Up arrow
+      ((selected--))
+      if ((selected < 0)); then selected=$((${#k8s_versions[@]} - 1)); fi
+      ;;
+    $'\x1b[B') # Down arrow
+      ((selected++))
+      if ((selected >= ${#k8s_versions[@]})); then selected=0; fi
+      ;;
+    "") # Enter key
+      break
+      ;;
+  esac
+done
+
+# Save selected version and its corresponding code
+selected_k8s="${k8s_versions[$selected]}"
+k8s_code="${k8s_version_codes[$selected]}"
+
+# You can use these variables now:
+# $selected_os, $ami_id, $selected_k8s, $k8s_code
+
+# Example printout (can be removed)
+echo
+echo "You selected:"
+echo "OS: $selected_os"
+echo "AMI: $ami_id"
+echo "Kubernetes version: $selected_k8s"
+echo "K8s code: $k8s_code"
+
 
 echo "Selected operating system: $selected_os"
 echo "Corresponding AMI: $ami_id"
@@ -216,6 +280,8 @@ terraform output > ips.txt
 # Read the contents of the file
 content=$(cat ips.txt)
 
+echo "" > outputs.tf
+sed -i "s|$ami_id|image_id_replace|g" "$variables_file"
 # Parse the IPs and DNS names from the output and populate the associative arrays
 while IFS= read -r line; do
     name=$(echo "$line" | cut -d '=' -f1 | xargs)
@@ -244,13 +310,13 @@ cd ../ansible/
 # Create the Ansible inventory file
 echo "[k8-masters]" > inventory.ini
 for dns in "${!masters[@]}"; do
-    echo "$dns ansible_host=${masters[$dns]}" >> inventory.ini
+    echo "$dns ansible_host=${masters[$dns]} env=$k8s_code" >> inventory.ini
 done
 
 echo "" >> inventory.ini
 echo "[k8-workers]" >> inventory.ini
 for dns in "${!workers[@]}"; do
-    echo "$dns ansible_host=${workers[$dns]}" >> inventory.ini
+    echo "$dns ansible_host=${workers[$dns]} env=$k8s_code" >> inventory.ini
 done
 
 # Clean up the temporary IP output file
@@ -262,8 +328,8 @@ wait_for_ssh masters "masters"
 wait_for_ssh workers "workers"
 
 # Run Ansible playbooks to configure the Kubernetes cluster
-ansible-playbook -i inventory.ini playbooks/01-preconfig_kubernetes_servers.yml
-ansible-playbook -i inventory.ini playbooks/02-configure_nodes.yml
+#ansible-playbook -i inventory.ini playbooks/01-preconfig_kubernetes_servers.yml
+#ansible-playbook -i inventory.ini playbooks/02-configure_nodes.yml
 
 # Remove the load balancer DNS variable after use to avoid future conflicts
 grep -v 'load_balancer_dns:' roles/master/vars/main.yml > roles/master/vars/tmp && mv roles/master/vars/tmp roles/master/vars/main.yml

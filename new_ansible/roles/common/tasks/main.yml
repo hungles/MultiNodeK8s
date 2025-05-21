@@ -9,6 +9,10 @@
 - name: Include task to check connectivity
   ansible.builtin.include_tasks: 00-check-connectivity.yml
 
-- name: Include task to add GPG keys (Debian)
+- name: Include task to add GPG keys and Repos (Debian)
   ansible.builtin.include_tasks: 01-repo-config-deb.yml
   when: ansible_os_family == "Debian"
+
+- name: Include task to add GPG keys and Repos (RedHat)
+  ansible.builtin.include_tasks: 02-repo-config-rh.yml
+  when: ansible_os_family == "RedHat"

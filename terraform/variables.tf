@@ -24,5 +24,5 @@ variable "subnet_cidr"{
 
 variable "ami" {
   type = string
-  default = "image_id_replace"
+  default = "image_id_replace" # Set for "image_id_replace" to new deployments
 }

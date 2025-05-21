@@ -1,0 +1,36 @@
+- name: Install necessary tools for RedHat-based systems
+  dnf:
+    update_cache: yes
+    name: libselinux-python3
+
+
+- name: Set SELinux to permissive mode
+  ansible.posix.selinux:
+    policy: targeted
+    state: permissive
+
+- name: Reboot after modifying SELinux
+  ansible.builtin.reboot:
+
+- name: Set Kubernetes Package URL based on env variable
+  set_fact:
+    k8s_pkg_url: >-
+      {{ k8_33_pkg_rh if env == 'k33' else
+         k8_32_pkg_rh if env == 'k32' else
+         k8_31_pkg_rh if env == 'k31' else '' }}
+
+- name: Plantilla para el repositorio de Kubernetes
+  template:
+    src: kubernetes-repo.j2
+    dest: /etc/yum.repos.d/kubernetes.repo
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Install dnf-plugins-core (required for dnf config-manager)
+  dnf:
+    name: dnf-plugins-core
+    state: present
+
+- name: Add Docker repository
+  command: dnf config-manager --add-repo https://download.docker.com/linux/rhel/docker-ce.repo
