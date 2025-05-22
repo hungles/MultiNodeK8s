@@ -1,3 +1,4 @@
-#SPDX-License-Identifier: MIT-0
----
-# vars file for master
+is_first_master: "{{ inventory_hostname == groups['k8-masters'][0] }}"
+subnet_kubernetes: 10.20.0.0/16
+ansible_user_id: "scarmona"
+load_balancer_dns: "lb.hungles.com"

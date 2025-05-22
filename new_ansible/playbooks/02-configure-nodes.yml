@@ -4,7 +4,7 @@
   roles:
     - master
 
-- name: Join workers to the cluster
-  hosts: k8-workers
-  roles:
-    - workers
+# - name: Join workers to the cluster
+#   hosts: k8-workers
+#   roles:
+#     - workers
