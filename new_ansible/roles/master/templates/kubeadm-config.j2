@@ -1,0 +1,12 @@
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: {{ host_ip }}
+  bindPort: 6443
+---
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: ClusterConfiguration
+kubernetesVersion: "1.32.0"
+controlPlaneEndpoint: "{{ load_balancer_dns }}:6443"
+networking:
+  podSubnet: "{{ subnet_kubernetes }}"

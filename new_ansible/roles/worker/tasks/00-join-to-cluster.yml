@@ -1,0 +1,5 @@
+- name: Run swapoff -a
+  command: swapoff -a
+
+- name: Run the join command
+  command: "{{ hostvars[groups['k8-masters'][0]].join_command }}"

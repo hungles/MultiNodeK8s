@@ -1,0 +1,2 @@
+- name: Include task to join workers to the K8s cluster
+  ansible.builtin.include_tasks: 00-join-to-cluster.yml

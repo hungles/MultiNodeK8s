@@ -1,6 +1,44 @@
+- name: Enable the kubelet service
+  ansible.builtin.systemd:
+    name: kubelet
+    enabled: yes
+
+- name: Start the kubelet service
+  ansible.builtin.systemd:
+    name: kubelet
+    state: started
+
+- name: Run swapoff -a
+  command: swapoff -a
+
+- name: Get Host IP
+  shell: ip -4 addr show {{ ansible_default_ipv4.interface }} | grep -oP '(?<=inet\s)\d+(\.\d+){3}'
+  register: host_ip_cmd
+  when: is_first_master
+
+- name: Save IP in variable
+  set_fact:
+    host_ip: "{{ host_ip_cmd.stdout }}"
+  when: is_first_master
+
+- name: Create configuration file from template
+  ansible.builtin.template:
+    src: kubeadm-config.j2
+    dest: /home/scarmona/kubeadm-config.yml
+    owner: scarmona
+    group: scarmona
+    mode: '0644'
+  when: is_first_master
+
 - name: Run kubeadm init only on the first node
   shell: |
-    kubeadm init --control-plane-endpoint "{{ load_balancer_dns }}:6443" --upload-certs
+    kubeadm init --config /home/scarmona/kubeadm-config.yml
+  when: is_first_master
+  register: kubeadm_output
+
+- name: Show output of kubeadm init
+  debug:
+    var: kubeadm_output.stdout_lines
   when: is_first_master
 
 - name: Create a .kube directory in the current user's home page

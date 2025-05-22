@@ -12,3 +12,6 @@
     - name: Run mount command to apply changes
       ansible.builtin.command:
         cmd: mount -a              # Re-mounts filesystems according to /etc/fstab, applying the changes
+    
+    - name: Reboot after modifying SELinux
+      ansible.builtin.reboot:
