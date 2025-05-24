@@ -281,7 +281,7 @@ terraform output > ips.txt
 content=$(cat ips.txt)
 
 echo "" > outputs.tf
-sed -i "s|$ami_id|image_id_replace|g" "$variables_file"
+#sed -i "s|$ami_id|image_id_replace|g" "$variables_file"
 # Parse the IPs and DNS names from the output and populate the associative arrays
 while IFS= read -r line; do
     name=$(echo "$line" | cut -d '=' -f1 | xargs)
@@ -310,14 +310,15 @@ cd ../ansible/
 # Create the Ansible inventory file
 echo "[k8-masters]" > inventory.ini
 for dns in "${!masters[@]}"; do
-    echo "$dns ansible_host=${masters[$dns]} env=$k8s_code" >> inventory.ini
+    echo "$dns ansible_host=${masters[$dns]} env=$k8s_code" os=$selected_os >> inventory.ini
 done
 
 echo "" >> inventory.ini
 echo "[k8-workers]" >> inventory.ini
 for dns in "${!workers[@]}"; do
-    echo "$dns ansible_host=${workers[$dns]} env=$k8s_code" >> inventory.ini
+    echo "$dns ansible_host=${workers[$dns]} env=$k8s_code" os=$selected_os >> inventory.ini
 done
+
 
 # Clean up the temporary IP output file
 rm -f ../terraform/ips.txt
@@ -328,8 +329,8 @@ wait_for_ssh masters "masters"
 wait_for_ssh workers "workers"
 
 # Run Ansible playbooks to configure the Kubernetes cluster
-#ansible-playbook -i inventory.ini playbooks/01-preconfig_kubernetes_servers.yml
-#ansible-playbook -i inventory.ini playbooks/02-configure_nodes.yml
+ansible-playbook -i inventory.ini playbooks/01-preconfig-kubernetes-servers.yml
+ansible-playbook -i inventory.ini playbooks/02-configure-nodes.yml
 
 # Remove the load balancer DNS variable after use to avoid future conflicts
 grep -v 'load_balancer_dns:' roles/master/vars/main.yml > roles/master/vars/tmp && mv roles/master/vars/tmp roles/master/vars/main.yml

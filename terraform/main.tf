@@ -14,3 +14,4 @@ module "ssh_sg" {
   source            = "./modules/sg/ec2"
   vpc_id            = module.k8_vpc.vpc_id
 }
+

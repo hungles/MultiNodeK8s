@@ -1,2 +1,0 @@
-- name: Installing necessary kubernetes tools
-  ansible.builtin.include_tasks: 00-configure-k8.yml

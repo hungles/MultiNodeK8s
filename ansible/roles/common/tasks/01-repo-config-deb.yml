@@ -27,7 +27,7 @@
 - name: Set Docker GPG key URL based on os variable
   set_fact:
     docker_gpg_url: >
-      {{ docker_gpg_ubuntu if os == 'ubuntu' else
+      {{ docker_gpg_ubuntu if os == 'Ubuntu' else
          docker_gpg_debian if os == 'debian' else '' }}
 
 - name: Download Kubernetes GPG key in ASCII format
@@ -62,7 +62,7 @@
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/trusted.gpg.d/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
     $(. /etc/os-release && echo \"${UBUNTU_CODENAME:-$VERSION_CODENAME}\") stable" | \
     tee /etc/apt/sources.list.d/docker.list > /dev/null
-  when: os == 'ubuntu'
+  when: os == 'Ubuntu'
 
 - name: Add Docker repository for Debian
   ansible.builtin.shell: |

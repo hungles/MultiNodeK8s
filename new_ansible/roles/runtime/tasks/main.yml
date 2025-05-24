@@ -1,2 +1,0 @@
-- name: Include task to install runtime
-  ansible.builtin.include_tasks: 00-configure-runtime.yml

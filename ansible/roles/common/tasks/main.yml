@@ -1,34 +1,35 @@
+#SPDX-License-Identifier: MIT-0
 ---
+# tasks file for common
+
 - name: Load variables from repo_vars.yml
   include_vars:
-    file: "../vars/repo_vars.yml"
+    file: "../vars/main.yml"
 
 - name: Include task to check connectivity
-  ansible.builtin.include_tasks: 00-check-ping.yml
+  ansible.builtin.include_tasks: 00-check-connectivity.yml
 
-- name: Include task to add GPG keys (Debian)
-  ansible.builtin.include_tasks: 01_repo_config_deb.yml
+- name: Include task to add GPG keys and Repos (Debian)
+  ansible.builtin.include_tasks: 01-repo-config-deb.yml
   when: ansible_os_family == "Debian"
 
-- name: Include task to add GPG keys (RedHat)
-  ansible.builtin.include_tasks: 01_repo_config_rh.yml
+- name: Include task to add GPG keys and Repos (RedHat)
+  ansible.builtin.include_tasks: 02-repo-config-rh.yml
   when: ansible_os_family == "RedHat"
 
-- name: Create firewall rules on Master Nodes
-  ansible.builtin.include_tasks: 02_allow_ports_master.yml
+- name: Include task to allow Kubernetes Ports in Masters
+  ansible.builtin.include_tasks: 03-allow-ports-master.yml
   when: "'k8-masters' in group_names"
-  
-- name: Create firewall rules on Worker Nodes
-  ansible.builtin.include_tasks: 02_allow_ports_worker.yml
+
+- name: Include task to allow Kubernetes Ports in Workers
+  ansible.builtin.include_tasks: 04-allow-ports-worker.yml
   when: "'k8-workers' in group_names"
 
-- name: Include task to disable swap memory
-  ansible.builtin.include_tasks: 03_disable_swap_memory.yml
-
 - name: Include task to install required tools
-  ansible.builtin.include_tasks: 04_install_tools.yml
+  ansible.builtin.include_tasks: 05-install-tools.yml
+
+- name: Include task to disable swap memory
+  ansible.builtin.include_tasks: 06-disable-swap-memory.yml
 
 - name: Include task to preconfigure containerd
-  ansible.builtin.include_tasks: 05_preconf_containerd.yml
-
-
+  ansible.builtin.include_tasks: 07-preconf-containerd.yml

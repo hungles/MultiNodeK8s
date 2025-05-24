@@ -1,4 +1,2 @@
----
-#roles/common/tasks/main.yml
-- name: Include task to install Kubernetes components
-  ansible.builtin.include_tasks: 00_configure_runtime.yml
+- name: Include task to install runtime
+  ansible.builtin.include_tasks: 00-configure-runtime.yml

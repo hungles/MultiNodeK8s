@@ -1,8 +1,6 @@
----
-
 - name: Load variables from hosts_vars.yml
   include_vars:
     file: "../vars/main.yml"
 
 - name: Add task install control plane
-  ansible.builtin.include_tasks: 00_install_control_plane.yml
+  ansible.builtin.include_tasks: 00-install-control-plane.yml
